@@ -38,29 +38,9 @@ dependencies {
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
-    testImplementation platform('org.testcontainers:testcontainers-bom:1.20.6')
-    testImplementation 'org.testcontainers:junit-jupiter'
-    testImplementation 'org.testcontainers:postgresql'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 tasks.withType(Test).configureEach {
     useJUnitPlatform()
-    // Testcontainers looks for /var/run/docker.sock by default. Colima (and similar) expose the engine
-    // on a different socket; set DOCKER_HOST when the default socket is missing unless already configured.
-//    def existingDockerHost = System.getenv('DOCKER_HOST')
-//    if (!existingDockerHost && !new File('/var/run/docker.sock').exists()) {
-//        def home = System.getProperty('user.home')
-//        def candidateFiles = [
-//                new File(home, '.colima/default/docker.sock'),
-//                new File(home, '.colima/docker.sock'),
-//                new File(home, '.orbstack/run/docker.sock'),
-//        ]
-//        def socket = candidateFiles.find { it.isFile() }
-//        if (socket != null) {
-//            def uri = "unix://${socket.absolutePath}"
-//            environment 'DOCKER_HOST', uri
-//            logger.lifecycle("test: DOCKER_HOST=${uri} (non-default Docker socket)")
-//        }
-//    }
 }

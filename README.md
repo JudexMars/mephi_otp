@@ -18,13 +18,6 @@ Backend service for protecting operations with time-limited one-time codes (OTP)
 ## Prerequisites
 
 - JDK 21
-- Docker (optional for `./gradlew test`: integration tests use Testcontainers and are skipped if Docker is unavailable)
-
-**Colima / OrbStack (macOS):** the CLI may work while the JVM still does not see `/var/run/docker.sock`. Either start Colima with Docker socket in the default location, or export `DOCKER_HOST` before Gradle/IDE, for example:
-
-`export DOCKER_HOST="unix://${HOME}/.colima/default/docker.sock"`
-
-(Use `colima status` or `ls ~/.colima` to confirm the actual path.) The Gradle `test` task also tries to set `DOCKER_HOST` automatically when that file exists and `/var/run/docker.sock` does not.
 - PostgreSQL 17 for local runs (or use Docker Compose in the repo root)
 
 ## Quick start
@@ -144,8 +137,13 @@ OpenAPI JSON: http://localhost:8080/v3/api-docs
 ./gradlew test
 ```
 
-- With **Docker** (socket visible to the JVM, see Colima note above), Testcontainers starts PostgreSQL 17 and runs integration scenarios (single admin rule, FILE channel generate/validate, role separation, admin APIs).
-- **Without Docker**, those tests are skipped (`@Testcontainers(disabledWithoutDocker = true)`).
+Unit tests cover service-layer logic with Mockito (no Docker or database required):
+
+- `AuthServiceTest` — registration rules, login
+- `AdminServiceTest` — OTP config, user list/delete
+- `OtpServiceTest` — generate/validate OTP, delivery rollback
+- `OtpDestinationResolverTest` — channel destinations
+- `JwtServiceTest` — token create/parse
 
 ### Manual smoke test (curl)
 
@@ -169,7 +167,7 @@ OpenAPI JSON: http://localhost:8080/v3/api-docs
 
 ### External libraries (Gradle)
 
-Declared in `build.gradle`: Spring Boot WebMVC, JDBC, Security, Validation, Flyway, PostgreSQL driver, JJWT, Angus Mail, jsmpp, Testcontainers (tests). No extra manual install beyond Gradle sync.
+Declared in `build.gradle`: Spring Boot WebMVC, JDBC, Security, Validation, Flyway, PostgreSQL driver, JJWT, Angus Mail, jsmpp. No extra manual install beyond Gradle sync.
 
 ## Security notes
 
