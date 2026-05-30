@@ -1,0 +1,48 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: otp-postgres
+    environment:
+      POSTGRES_DB: otpdb
+      POSTGRES_USER: otp
+      POSTGRES_PASSWORD: otp
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U otp -d otpdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  flyway:
+    image: flyway/flyway:11-alpine
+    container_name: otp-flyway
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: -connectRetries=60 migrate
+    environment:
+      FLYWAY_URL: jdbc:postgresql://postgres:5432/otpdb
+      FLYWAY_USER: otp
+      FLYWAY_PASSWORD: otp
+      FLYWAY_BASELINE_ON_MIGRATE: "true"
+      FLYWAY_LOCATIONS: filesystem:/flyway/sql
+    volumes:
+      - ./src/main/resources/db/migration:/flyway/sql:ro
+    restart: "no"
+
+  smpp-sim:
+    image: bitsensedev/smpp-sim:latest
+    container_name: smpp-sim
+    ports:
+      - "2775:2775"
+      - "8989:8989"
+    volumes:
+      - ./docker/smppsim/smppsim.props:/smppsim/conf/smppsim.props:ro
+      # Named volume avoids Colima/Docker chown errors on bind-mount under the project tree
+      - smpp-sim-captures:/smppsim/captures
+    restart: unless-stopped
+
+volumes:
+  smpp-sim-captures:

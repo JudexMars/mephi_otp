@@ -1,0 +1,61 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: otp-project
+  datasource:
+    url: jdbc:postgresql://localhost:5432/otpdb
+    username: otp
+    password: otp
+    driver-class-name: org.postgresql.Driver
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+jwt:
+  secret: "ChangeThisSecretKeyToAtLeast256BitsForHS256AlgorithmSecurity!!"
+  expiration-ms: 86400000
+
+otp:
+  file:
+    path: ./generated-otp.txt
+  expiry-scan-interval-ms: 60000
+
+smpp:
+  host: localhost
+  port: 2775
+  system-id: smppclient1
+  password: password
+  system-type: OTP
+  source-addr: OTPService
+
+email:
+  username: your_email@example.com
+  password: your_email_password
+  from: your_email@example.com
+  mail:
+    smtp:
+      host: smtp.example.com
+      port: 587
+      auth: true
+      starttls:
+        enable: true
+
+telegram:
+  bot-token: REPLACE_WITH_BOTFATHER_TOKEN
+
+logging:
+  level:
+    edu.bondarchukdo.otpproject: INFO
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+    display-request-duration: true
+    try-it-out-enabled: true
+    persist-authorization: true
