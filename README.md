@@ -1,104 +1,104 @@
 # OTP Project
 
-Backend service for protecting operations with time-limited one-time codes (OTP). Built with **Java 21**, **Spring Boot 4**, **PostgreSQL 17**, **JDBC** (no JPA), and **JWT** authentication.
+Backend-сервис для защиты операций одноразовыми кодами (OTP) с ограниченным временем жизни. Реализован на **Java 21**, **Spring Boot 4**, **PostgreSQL 17**, **JDBC** (без JPA) и **JWT**-аутентификации.
 
-## Modules (packages)
+## Модули (пакеты)
 
-| Package | Responsibility |
-|---------|----------------|
-| `edu.bondarchukdo.otpproject.web` | REST controllers (`Auth`, `Otp`, `Admin`), DTOs, request logging, global exception handling |
-| `edu.bondarchukdo.otpproject.service` | `AuthService`, `OtpService`, `AdminService`; service-layer command/result models |
-| `edu.bondarchukdo.otpproject.dao` | JDBC access to `users`, `otp_config`, `otp_codes` |
-| `edu.bondarchukdo.otpproject.domain` | Roles, OTP statuses, delivery channel enum, immutable records |
-| `edu.bondarchukdo.otpproject.channel` | Email (SMTP), SMS (SMPP), Telegram Bot API, file append |
-| `edu.bondarchukdo.otpproject.config` | Security, JWT properties, Spring configuration |
-| `edu.bondarchukdo.otpproject.security` | JWT creation, parsing, servlet filter |
-| `edu.bondarchukdo.otpproject.scheduler` | Periodic mark of expired OTP rows |
+| Пакет | Назначение |
+|-------|------------|
+| `edu.bondarchukdo.otpproject.web` | REST-контроллеры (`Auth`, `Otp`, `Admin`), DTO, логирование запросов, глобальная обработка ошибок |
+| `edu.bondarchukdo.otpproject.service` | `AuthService`, `OtpService`, `AdminService`; модели команд и результатов сервисного слоя |
+| `edu.bondarchukdo.otpproject.dao` | JDBC-доступ к таблицам `users`, `otp_config`, `otp_codes` |
+| `edu.bondarchukdo.otpproject.domain` | Роли, статусы OTP, каналы доставки, неизменяемые записи |
+| `edu.bondarchukdo.otpproject.channel` | Email (SMTP), SMS (SMPP), Telegram Bot API, запись в файл |
+| `edu.bondarchukdo.otpproject.config` | Security, свойства JWT, конфигурация Spring |
+| `edu.bondarchukdo.otpproject.security` | Создание и разбор JWT, servlet-фильтр |
+| `edu.bondarchukdo.otpproject.scheduler` | Периодическая пометка просроченных OTP |
 
-## Prerequisites
+## Требования
 
 - JDK 21
-- PostgreSQL 17 for local runs (or use Docker Compose in the repo root)
+- PostgreSQL 17 для локального запуска (или Docker Compose из корня репозитория)
 
-## Quick start
+## Быстрый старт
 
-1. Start infrastructure (PostgreSQL, Flyway migrations, SMPP simulator):
+1. Запустите инфраструктуру (PostgreSQL, миграции Flyway, SMPP-эмулятор):
 
    ```bash
    docker compose up -d
    ```
 
-   Check that migrations succeeded:
+   Убедитесь, что миграции прошли успешно:
 
    ```bash
    docker compose logs flyway
    ```
 
-   | Service | Image | Host ports | Purpose |
-   |---------|-------|------------|---------|
-   | `postgres` | `postgres:17-alpine` | `5432` | Application database |
-   | `flyway` | `flyway/flyway:11-alpine` | — | Applies SQL from `src/main/resources/db/migration/` once Postgres is healthy |
-   | `smpp-sim` | `bitsensedev/smpp-sim` | `2775` (SMPP), `8989` (web UI) | SMSC emulator for OTP over SMS |
+   | Сервис | Образ | Порты на хосте | Назначение |
+   |--------|-------|----------------|------------|
+   | `postgres` | `postgres:17-alpine` | `5432` | База данных приложения |
+   | `flyway` | `flyway/flyway:11-alpine` | — | Применяет SQL из `src/main/resources/db/migration/` после готовности Postgres |
+   | `smpp-sim` | `bitsensedev/smpp-sim` | `2775` (SMPP), `8989` (web UI) | Эмулятор SMSC для OTP по SMS |
 
-   After adding or changing migration files, re-apply:
+   После добавления или изменения миграций выполните повторно:
 
    ```bash
    docker compose up flyway
    ```
 
-   SMPP credentials are preconfigured in [`application.yml`](src/main/resources/application.yml) (`smpp.*`) and match [`docker/smppsim/smppsim.props`](docker/smppsim/smppsim.props) mounted into the container. Defaults: `system-id` / `smppclient1`, `password` / `password`, host `localhost`, port `2775`.
+   Учётные данные SMPP заданы в [`application.yml`](src/main/resources/application.yml) (`smpp.*`) и совпадают с [`docker/smppsim/smppsim.props`](docker/smppsim/smppsim.props), смонтированным в контейнер. По умолчанию: `system-id` / `smppclient1`, `password` / `password`, хост `localhost`, порт `2775`.
 
-   After changing `smppsim.props`, recreate the container: `docker compose up -d --force-recreate smpp-sim`. Successful start shows no `NullPointerException` in `docker logs smpp-sim`; web UI: http://localhost:8989 .
+   После изменения `smppsim.props` пересоздайте контейнер: `docker compose up -d --force-recreate smpp-sim`. Успешный запуск — без `NullPointerException` в `docker logs smpp-sim`; web UI: http://localhost:8989 .
 
-   SMPP PDU capture files (if enabled in `smppsim.props`) are stored in the Docker volume `smpp-sim-captures`, not in the project folder (avoids Colima bind-mount permission errors). Copy them out with:
+   Файлы захвата SMPP PDU (если включены в `smppsim.props`) хранятся в Docker-томе `smpp-sim-captures`, а не в папке проекта (избегает ошибок прав при bind-mount в Colima). Скопировать их можно так:
 
    ```bash
    docker cp smpp-sim:/smppsim/captures ./smppsim-captures-export
    ```
 
-2. Run the application:
+2. Запустите приложение:
 
    ```bash
    ./gradlew bootRun
    ```
 
-   Default datasource: `jdbc:postgresql://localhost:5432/otpdb` user `otp` / password `otp` (see `application.yml`).
+   Datasource по умолчанию: `jdbc:postgresql://localhost:5432/otpdb`, пользователь `otp` / пароль `otp` (см. `application.yml`).
 
-3. Configure delivery channels in [`application.yml`](src/main/resources/application.yml):
+3. Настройте каналы доставки в [`application.yml`](src/main/resources/application.yml):
 
    - **Email:** `email.username`, `email.password`, `email.from`, `email.mail.smtp.*` (Angus Mail / SMTP).
-   - **SMS:** `docker compose up -d smpp-sim` (included in full `docker compose up -d`). Settings under `smpp.*`. Web UI: http://localhost:8989 . Example OTP body: `"channel":"SMS"`, `"destination":"79001234567"`.
-   - **Telegram:** create a bot with @BotFather, set `telegram.bot-token`. Use `getUpdates` to obtain `chat_id` and pass it as `destination` (or store `telegramChatId` at registration).
+   - **SMS:** `docker compose up -d smpp-sim` (входит в полный `docker compose up -d`). Параметры в секции `smpp.*`. Web UI: http://localhost:8989 . Пример тела OTP: `"channel":"SMS"`, `"destination":"79001234567"`.
+   - **Telegram:** создайте бота через @BotFather, укажите `telegram.bot-token`. Через `getUpdates` получите `chat_id` и передайте его в `destination` (или сохраните `telegramChatId` при регистрации).
 
-4. **OTP file path:** `otp.file.path` in `application.yml` (default `./generated-otp.txt` in the process working directory).
+4. **Путь к файлу OTP:** `otp.file.path` в `application.yml` (по умолчанию `./generated-otp.txt` в рабочей директории процесса).
 
-## API overview
+## Обзор API
 
-Base path: `/api/v1`
+Базовый путь: `/api/v1`
 
-### Public
+### Публичные методы
 
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/auth/register` | Register user. Body: `login`, `password`, `role` (`USER` or `ADMIN`), optional `email`, `phone`, `telegramChatId`. Only **one** `ADMIN` may exist. |
-| POST | `/auth/login` | Returns JSON: `accessToken`, `expiresInSeconds`. Header for protected calls: `Authorization: Bearer <token>`. |
+| Метод | Путь | Описание |
+|-------|------|----------|
+| POST | `/auth/register` | Регистрация пользователя. Тело: `login`, `password`, `role` (`USER` или `ADMIN`), опционально `email`, `phone`, `telegramChatId`. Допускается только **один** `ADMIN`. |
+| POST | `/auth/login` | Возвращает JSON: `accessToken`, `expiresInSeconds`. Для защищённых вызовов: заголовок `Authorization: Bearer <token>`. |
 
-### User (`ROLE_USER`)
+### Пользователь (`ROLE_USER`)
 
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/otp/generate` | Body: `operationId`, `channel` (`EMAIL`, `SMS`, `TELEGRAM`, `FILE`), optional `destination`. Generates OTP from DB config, stores hash, delivers. If delivery fails, the new OTP row is removed. |
-| POST | `/otp/validate` | Body: `operationId`, `code`. Marks OTP `USED` on success. |
+| Метод | Путь | Описание |
+|-------|------|----------|
+| POST | `/otp/generate` | Тело: `operationId`, `channel` (`EMAIL`, `SMS`, `TELEGRAM`, `FILE`), опционально `destination`. Генерирует OTP по конфигу из БД, сохраняет хеш, доставляет код. При ошибке доставки новая запись OTP удаляется. |
+| POST | `/otp/validate` | Тело: `operationId`, `code`. При успехе помечает OTP как `USED`. |
 
-### Administrator (`ROLE_ADMIN`)
+### Администратор (`ROLE_ADMIN`)
 
-| Method | Path | Description |
-|--------|------|-------------|
-| PUT | `/admin/otp-config` | Body: `ttlSeconds`, `codeLength`. Updates singleton OTP configuration. |
-| GET | `/admin/users` | Lists all users with role `USER` (no administrators). |
-| DELETE | `/admin/users/{id}` | Deletes user and related OTP codes (cannot delete an administrator). |
+| Метод | Путь | Описание |
+|-------|------|----------|
+| PUT | `/admin/otp-config` | Тело: `ttlSeconds`, `codeLength`. Обновляет единственную запись конфигурации OTP. |
+| GET | `/admin/users` | Список всех пользователей с ролью `USER` (без администраторов). |
+| DELETE | `/admin/users/{id}` | Удаляет пользователя и связанные OTP-коды (администратора удалить нельзя). |
 
-Non-admin JWTs receive **403** on `/admin/**`. Missing or invalid JWT on protected routes yields **401**/**403** per Spring Security.
+JWT без роли администратора получает **403** на `/admin/**`. Отсутствующий или невалидный JWT на защищённых маршрутах даёт **401**/**403** согласно Spring Security.
 
 ## Swagger UI (OpenAPI)
 
@@ -129,25 +129,25 @@ OpenAPI JSON: http://localhost:8080/v3/api-docs
 }
 ```
 
-## How to test
+## Тестирование
 
-### Automated tests
+### Автоматические тесты
 
 ```bash
 ./gradlew test
 ```
 
-Unit tests cover service-layer logic with Mockito (no Docker or database required):
+Юнит-тесты покрывают логику сервисного слоя с Mockito (Docker и база данных не нужны):
 
-- `AuthServiceTest` — registration rules, login
-- `AdminServiceTest` — OTP config, user list/delete
-- `OtpServiceTest` — generate/validate OTP, delivery rollback
-- `OtpDestinationResolverTest` — channel destinations
-- `JwtServiceTest` — token create/parse
+- `AuthServiceTest` — правила регистрации, вход
+- `AdminServiceTest` — конфиг OTP, список и удаление пользователей
+- `OtpServiceTest` — генерация/валидация OTP, откат при ошибке доставки
+- `OtpDestinationResolverTest` — адреса доставки по каналам
+- `JwtServiceTest` — создание и разбор токена
 
-### Manual smoke test (curl)
+### Ручная проверка (curl)
 
-1. Register admin and user, login as user, generate with `FILE`, read the file line for `code=`, then validate (replace `TOKEN` and `CODE`):
+1. Зарегистрируйте администратора и пользователя, войдите как пользователь, сгенерируйте OTP с каналом `FILE`, найдите в файле строку с `code=`, затем выполните валидацию (подставьте `TOKEN` и `CODE`):
 
    ```bash
    curl -s -X POST http://localhost:8080/api/v1/auth/register -H 'Content-Type: application/json' \
@@ -158,19 +158,18 @@ Unit tests cover service-layer logic with Mockito (no Docker or database require
      -d '{"login":"alice","password":"secret"}' | jq -r .accessToken)
    curl -s -X POST http://localhost:8080/api/v1/otp/generate -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
      -d '{"operationId":"pay-1","channel":"FILE"}'
-   # Inspect otp.file.path (default ./generated-otp.txt) for the plaintext line, then:
+   # Найдите код в otp.file.path (по умолчанию ./generated-otp.txt), затем:
    curl -s -X POST http://localhost:8080/api/v1/otp/validate -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
      -d '{"operationId":"pay-1","code":"CODE"}'
    ```
 
-2. Admin token: login as `admin`, then `curl` `GET /api/v1/admin/users` and `PUT /admin/otp-config` with the Bearer token.
+2. Токен администратора: войдите как `admin`, затем выполните `curl` для `GET /api/v1/admin/users` и `PUT /admin/otp-config` с Bearer-токеном.
 
-### External libraries (Gradle)
+### Внешние библиотеки (Gradle)
 
-Declared in `build.gradle`: Spring Boot WebMVC, JDBC, Security, Validation, Flyway, PostgreSQL driver, JJWT, Angus Mail, jsmpp. No extra manual install beyond Gradle sync.
+Объявлены в `build.gradle`: Spring Boot WebMVC, JDBC, Security, Validation, Flyway, драйвер PostgreSQL, JJWT, Angus Mail, jsmpp. Дополнительная ручная установка не требуется — достаточно синхронизации Gradle.
 
-## Security notes
+## Безопасность
 
-- Change `jwt.secret` in production (HS256 requires a sufficiently long secret; see `application.yml`).
-- Passwords are stored with BCrypt; OTP codes are stored as BCrypt hashes of the numeric code.
-
+- В production замените `jwt.secret` (для HS256 нужен достаточно длинный секрет; см. `application.yml`).
+- Пароли хранятся с BCrypt; OTP-коды — в виде BCrypt-хешей числового кода.
