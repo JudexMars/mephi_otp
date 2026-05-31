@@ -104,11 +104,11 @@ JWT без роли администратора получает **403** на `
 
 После `./gradlew bootRun` откройте в браузере:
 
-**http://localhost:8080/swagger-ui.html**
+**http://localhost:8081/swagger-ui.html**
 
-(альтернативный путь: http://localhost:8080/swagger-ui/index.html)
+(альтернативный путь: http://localhost:8081/swagger-ui/index.html)
 
-OpenAPI JSON: http://localhost:8080/v3/api-docs
+OpenAPI JSON: http://localhost:8081/v3/api-docs
 
 ### Как пользоваться
 
@@ -150,16 +150,16 @@ OpenAPI JSON: http://localhost:8080/v3/api-docs
 1. Зарегистрируйте администратора и пользователя, войдите как пользователь, сгенерируйте OTP с каналом `FILE`, найдите в файле строку с `code=`, затем выполните валидацию (подставьте `TOKEN` и `CODE`):
 
    ```bash
-   curl -s -X POST http://localhost:8080/api/v1/auth/register -H 'Content-Type: application/json' \
+   curl -s -X POST http://localhost:8081/api/v1/auth/register -H 'Content-Type: application/json' \
      -d '{"login":"admin","password":"secret","role":"ADMIN"}'
-   curl -s -X POST http://localhost:8080/api/v1/auth/register -H 'Content-Type: application/json' \
+   curl -s -X POST http://localhost:8081/api/v1/auth/register -H 'Content-Type: application/json' \
      -d '{"login":"alice","password":"secret","role":"USER","email":"alice@example.com"}'
-   TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login -H 'Content-Type: application/json' \
+   TOKEN=$(curl -s -X POST http://localhost:8081/api/v1/auth/login -H 'Content-Type: application/json' \
      -d '{"login":"alice","password":"secret"}' | jq -r .accessToken)
-   curl -s -X POST http://localhost:8080/api/v1/otp/generate -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+   curl -s -X POST http://localhost:8081/api/v1/otp/generate -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
      -d '{"operationId":"pay-1","channel":"FILE"}'
    # Найдите код в otp.file.path (по умолчанию ./generated-otp.txt), затем:
-   curl -s -X POST http://localhost:8080/api/v1/otp/validate -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+   curl -s -X POST http://localhost:8081/api/v1/otp/validate -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
      -d '{"operationId":"pay-1","code":"CODE"}'
    ```
 

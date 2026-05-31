@@ -15,7 +15,7 @@ import org.springframework.context.annotation.Configuration;
 public class OpenApiConfig {
 
     @Bean
-    public OpenAPI otpOpenApi(@Value("${server.port:8080}") int serverPort) {
+    public OpenAPI otpOpenApi(@Value("${server.port:8081}") int serverPort) {
         final String bearerScheme = "BearerAuth";
         return new OpenAPI()
                 .info(new Info()
